@@ -39,7 +39,7 @@ def parse_args():
 
 
 def is_host_format(s):
-    format_pattern = r"((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)(:([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])+)?"
+    format_pattern = r"^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)(:([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])+)?$"
     if re.fullmatch(format_pattern, s):
         return True
     return False
@@ -50,11 +50,11 @@ def get_hosts(hostfile, port):
         return hosts
     hostfile = os.path.abspath(hostfile)
 
-    with open(hostfile, "r", encoding="utf-8") as fr:
+    with open(hostfile, "r") as fr:
         for line in fr:
             line = line.strip()
             if not is_host_format(line):
-                print(f"{line} is an invalid item in hostfile!")
+                print("{} is an invalid item in hostfile!".format(line))
                 continue
             line = line.split(":")
             if len(line) == 1:
@@ -64,25 +64,26 @@ def get_hosts(hostfile, port):
     return hosts
 
 def print_cmd(host, cmd):
-    print(f"\n{ 'run on ' + host + ' ':-^40}\n{cmd}\n{'-'*40}\n")
+    print("\n{:-^50}\n{}\n{}\n".format(" run on " + host + " ", cmd, "-"*50))
 
-def generate_cmds(cmds, hosts, key):
+def generate_cmds(cmds, hosts, args):
     ssh_cmds = []
     if not hosts:
         ssh_cmd = cmds
         ssh_cmds.append(ssh_cmd)
+        hosts.append(("localhost", args.port))
     else:
         for host, port in hosts:
-            ssh_cmd = f"ssh -p {str(port)} {host} -o StrictHostKeyChecking=no -q '{cmds}'"
-            if key:
-                ssh_cmd = f"sshpass -p {key} {ssh_cmd}"
+            ssh_cmd = "ssh -p {} {} -o StrictHostKeyChecking=no -q '{}'".format(str(port), host, cmds)
+            if args.key:
+                ssh_cmd = "sshpass -p {} {}".format(args.key, ssh_cmd)
             ssh_cmds.append(ssh_cmd)
     return ssh_cmds
 
 def execute_cmds(ssh_cmds, hosts, args):
     for i, ssh_cmd in enumerate(ssh_cmds):
         if args.background:
-            ssh_cmd = f"({ssh_cmd}) &"
+            ssh_cmd = "({}) &".format(ssh_cmd)
         print_cmd(hosts[i][0], ssh_cmd)
         subprocess.run(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
