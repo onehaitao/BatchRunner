@@ -2,6 +2,9 @@ import argparse
 import os
 import re
 import subprocess
+import sys
+
+py_version = sys.version_info.major
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Batch Runner")
@@ -35,12 +38,24 @@ def parse_args():
         action="store_true",
         help="execute commands in the background"
     )
+    parser.add_argument(
+        '-o', '--output',
+        default=None,
+        type=str,
+        help='path to save log info, default print to screen'
+    )
+    parser.add_argument(
+        "-q", "--quiet",
+        default=False,
+        action="store_true",
+        help="if set true, no log info produced"
+    )
     return parser.parse_args()
 
 
 def is_host_format(s):
     format_pattern = r"^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)(:([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])+)?$"
-    if re.fullmatch(format_pattern, s):
+    if re.match(format_pattern, s):
         return True
     return False
 
@@ -63,8 +78,12 @@ def get_hosts(hostfile, port):
                 hosts.append((line[0].strip(), int(line[1].strip())))
     return hosts
 
-def print_cmd(host, cmd):
-    print("\n{:-^50}\n{}\n{}\n".format(" run on " + host + " ", cmd, "-"*50))
+def print_cmd(host, cmd, fh=None):
+    cmd_info = "\n{:-^50}\n{}\n{}\n".format(" run on " + host + " ", cmd, "-"*50)
+    print(cmd_info)
+    if fh:
+        print(cmd_info, file=fh)
+        fh.flush()
 
 def generate_cmds(cmds, hosts, args):
     ssh_cmds = []
@@ -81,17 +100,32 @@ def generate_cmds(cmds, hosts, args):
     return ssh_cmds
 
 def execute_cmds(ssh_cmds, hosts, args):
+    if args.output and not args.quiet:
+        filedir = os.path.dirname(os.path.abspath(args.output))
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+        fh = open(args.output, "w")
+    else:
+        fh = None
     for i, ssh_cmd in enumerate(ssh_cmds):
         if args.background:
             ssh_cmd = "({}) &".format(ssh_cmd)
-        print_cmd(hosts[i][0], ssh_cmd)
-        subprocess.run(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        print_cmd(hosts[i][0], ssh_cmd, fh)
+        if py_version == 3:
+            if args.quiet:
+                subprocess.run(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            elif not args.output:
+                subprocess.run(ssh_cmd, shell=True)
+            else:
+                subprocess.run(ssh_cmd, shell=True, stdout=fh, stderr=fh)
+    if fh:
+        fh.close()
 
 def main():
     args = parse_args()
     hosts = get_hosts(args.hostfile, args.port)
     print(hosts)
-    ssh_cmds = generate_cmds(args.commands, hosts, args.key)
+    ssh_cmds = generate_cmds(args.commands, hosts, args)
     execute_cmds(ssh_cmds, hosts, args)
 
 if __name__ == "__main__":
