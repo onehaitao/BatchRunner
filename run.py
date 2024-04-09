@@ -6,6 +6,9 @@ import sys
 
 py_version = sys.version_info.major
 
+assert py_version == 3 or (py_version == 2 and sys.version.minor >= 7), \
+    "Require Python >= 2.7, rather than Python {}.{}".format(py_version, sys.version.minor)
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Batch Runner")
     parser.add_argument(
@@ -82,7 +85,7 @@ def print_cmd(host, cmd, fh=None):
     cmd_info = "\n{:-^50}\n{}\n{}\n".format(" run on " + host + " ", cmd, "-"*50)
     print(cmd_info)
     if fh:
-        print(cmd_info, file=fh)
+        fh.write(cmd_info + "\n")
         fh.flush()
 
 def generate_cmds(cmds, hosts, args):
@@ -111,20 +114,21 @@ def execute_cmds(ssh_cmds, hosts, args):
         if args.background:
             ssh_cmd = "({}) &".format(ssh_cmd)
         print_cmd(hosts[i][0], ssh_cmd, fh)
-        if py_version == 3:
-            if args.quiet:
-                subprocess.run(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            elif not args.output:
-                subprocess.run(ssh_cmd, shell=True)
-            else:
-                subprocess.run(ssh_cmd, shell=True, stdout=fh, stderr=fh)
+        if args.quiet:
+            stdout = subprocess.PIPE
+            stderr = subprocess.STDOUT
+        else:
+            stdout = fh
+            stderr = fh
+        proc = subprocess.run(ssh_cmd, shell=True, stdout=stdout, stderr=stderr)
+        proc.wait()
+        
     if fh:
         fh.close()
 
 def main():
     args = parse_args()
     hosts = get_hosts(args.hostfile, args.port)
-    print(hosts)
     ssh_cmds = generate_cmds(args.commands, hosts, args)
     execute_cmds(ssh_cmds, hosts, args)
 
