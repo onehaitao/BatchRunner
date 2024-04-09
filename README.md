@@ -1,12 +1,12 @@
 # BatchRunner
 A simple toolkit to help execute batch operations on cluster servers.
 
-## Requirements
+## 💨 Requirements
 
 * [Python](https://www.python.org/downloads/) >= 2.7 
 * [sshpass](https://pkgs.org/download/sshpass/) (unnecessary if no encryption)
 
-## Usage
+## 🌴 Usage
 
 Start a cluster task
 ```
@@ -28,7 +28,7 @@ python run.py -c <COMMANDS> -p <PORT> -i <HOSTFILE> -k <KEY> -o <OUTPUT> -b -q
 
 Use `--help` flag to see more parameter options.
 
-## QuickStart
+## 🚀 QuickStart
 
 1. Kill all python programs on all cluster servers in the background.
 ```bash
@@ -46,4 +46,4 @@ python run.py -i hostfile -c 'date'
 python run.py -i hostfile -c 'uname -a' -o './log/info.txt'
 ```
 
-You can try more in practice.
+You can try more in practice. 💪
