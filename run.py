@@ -6,8 +6,8 @@ import sys
 
 py_version = sys.version_info.major
 
-assert py_version == 3 or (py_version == 2 and sys.version.minor >= 7), \
-    "Require Python >= 2.7, rather than Python {}.{}".format(py_version, sys.version.minor)
+assert py_version == 3 or (py_version == 2 and sys.version_info.minor >= 7), \
+    "Require Python >= 2.7, rather than Python {}.{}".format(py_version, sys.version_info.minor)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Batch Runner")
@@ -120,7 +120,7 @@ def execute_cmds(ssh_cmds, hosts, args):
         else:
             stdout = fh
             stderr = fh
-        proc = subprocess.run(ssh_cmd, shell=True, stdout=stdout, stderr=stderr)
+        proc = subprocess.Popen(ssh_cmd, shell=True, stdout=stdout, stderr=stderr)
         proc.wait()
         
     if fh:
