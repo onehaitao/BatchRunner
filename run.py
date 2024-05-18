@@ -98,7 +98,7 @@ def generate_cmds(cmds, hosts, args):
         for host, port in hosts:
             ssh_cmd = "ssh -p {} {} -o StrictHostKeyChecking=no -q '{}'".format(str(port), host, cmds)
             if args.key:
-                ssh_cmd = "sshpass -p {} {}".format(args.key, ssh_cmd)
+                ssh_cmd = "sshpass -p '{}' {}".format(args.key, ssh_cmd)
             ssh_cmds.append(ssh_cmd)
     return ssh_cmds
 
