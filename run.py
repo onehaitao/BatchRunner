@@ -30,10 +30,10 @@ def parse_args():
         help="servers, defalut local"
     )
     parser.add_argument(
-        '-k', '--key',
+        "-k", "--key",
         default=None,
         type=str,
-        help='use passward to login, unsafe and not recommended'
+        help="use passward to login, unsafe and not recommended"
     )
     parser.add_argument(
         "-b", "--background",
@@ -42,10 +42,10 @@ def parse_args():
         help="execute commands in the background"
     )
     parser.add_argument(
-        '-o', '--output',
+        "-o", "--output",
         default=None,
         type=str,
-        help='path to save log info, default print to screen'
+        help="path to save log info, default print to screen"
     )
     parser.add_argument(
         "-q", "--quiet",
@@ -122,7 +122,7 @@ def execute_cmds(ssh_cmds, hosts, args):
             stderr = fh
         proc = subprocess.Popen(ssh_cmd, shell=True, stdout=stdout, stderr=stderr)
         proc.wait()
-        
+
     if fh:
         fh.close()
 
